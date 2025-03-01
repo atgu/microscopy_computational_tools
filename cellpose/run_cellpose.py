@@ -29,12 +29,16 @@ def cell_outlines(images_folder, files):
             im = Image.open(f'{images_folder}/{file}')
             im_resized = np.array(im.resize((512,512), Image.Resampling.NEAREST))
             if np.max(im_resized) - np.min(im_resized) < 1000:
+                print("limited intensity range in", file)
                 continue
             imgs = [log_scale(im_resized)]
             masks, flows, styles, diams = model.eval(imgs, diameter=25, channels=[0,0],
                                                      flow_threshold=0.4, do_3D=False)
 
             slices = find_objects(masks[0])
+            if len(slices) == 0:
+                print("no objects in", file)
+                continue
             # turn slices into array
             slices = np.array([
                 np.array([i, si[0].start, si[0].stop, si[1].start, si[1].stop])
