@@ -3,6 +3,7 @@ import glob
 import argparse
 import numpy as np
 import pandas as pd
+import pillow_jxl
 from PIL import Image
 from cellpose import models
 from cellpose.dynamics import get_centers

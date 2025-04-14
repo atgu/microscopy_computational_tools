@@ -1,7 +1,6 @@
 import efficientnet.tfkeras as efn
 import tensorflow as tf
 import numpy as np
-from PIL import Image
 import glob
 
 def cpcnn_model(pretrained_weights_path):
