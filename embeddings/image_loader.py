@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pillow_jxl
 from PIL import Image
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
