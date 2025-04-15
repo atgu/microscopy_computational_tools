@@ -20,8 +20,7 @@ for plate in plates:
     j = b.new_job(name=f'cellpose {plate}')
     j.cloudfuse(bucket_name, '/images')
     j._machine_type = config['cellpose']['machine-type']
-    j.image(config['cellpose']['docker-image'])
-    j.storage('25Gi') # should be large enough for Docker image and for tsv output (not for images)
+    j.storage('30Gi') # should be large enough for pixi (16 GB) and for tsv output (not for images)
 
     if config['cellpose']['model'] is not None:
         cellpose_model = b.read_input(config['cellpose']['model'])
@@ -34,7 +33,14 @@ for plate in plates:
     process_string = str(num_processes) + ' -- ' + ' '.join(map(str, range(num_processes)))
     image_folder = f'{input_folder}/{plate}/'
 
-    j.command(f'parallel -j {num_processes} python3 /scripts/cellpose/run_cellpose.py /images/{quote(image_folder)} {quote(DNA_channel)} {process_string}')
+    j.command('apt update')
+    j.command('apt install -y git curl moreutils')
+    j.command('git clone https://github.com/atgu/microscopy_computational_tools.git')
+    j.command('cd microscopy_computational_tools')
+    j.command('curl -fsSL https://pixi.sh/install.sh | sh')
+    j.command('export PATH=/root/.pixi/bin:$PATH')
+    j.command('pixi install')
+    j.command(f'parallel -j {num_processes} pixi run python cellpose/run_cellpose.py /images/{quote(image_folder)} {quote(DNA_channel)} {process_string}')
     j.command(f'echo -e "file\\ti\\tj" > {j.ofile}')
     j.command(f'cat cellpose_* >> {j.ofile}')
     b.write_output(j.ofile, f'{output_folder}/cellpose_{plate}.tsv')
