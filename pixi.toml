@@ -1,0 +1,20 @@
+[workspace]
+channels = ["conda-forge"]
+name = "microscopy"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.12.*"
+
+[pypi-dependencies]
+cellpose = "*"
+numpy = "*"
+pandas = "*"
+pillow = "*"
+pillow-jxl-plugin = "*"
+efficientnet = "*"
+torch = "*"
+tensorflow = "==2.17.*"
