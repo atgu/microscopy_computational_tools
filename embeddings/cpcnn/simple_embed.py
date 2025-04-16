@@ -31,7 +31,7 @@ def cpcnn_model(pretrained_weights_path):
         x = tf.convert_to_tensor(x)
 
         # code from https://github.com/cytomining/DeepProfiler/blob/master/deepprofiler/learning/profiling.py
-        features = feat_extractor.predict(x, verbose=0)
+        features = feat_extractor.predict([x], verbose=0)
         while len(features.shape) > 2:
             features = np.mean(features, axis=1)
         return features
