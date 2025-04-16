@@ -31,8 +31,7 @@ for plate in args.plates:
     j = b.new_job(name=f'embedding {args.model} {plate}')
     j.cloudfuse(bucket_name, '/images')
     j._machine_type = config['embedding']['machine-type']
-    j.image(config['embedding']['docker-image'])
-    j.storage('25Gi') # should be large enough for Docker image, model and tsv output (not for images)
+    j.storage('30Gi') # should be large enough for pixi (12 GB), model and tsv output (not for images)
 
     model_weights = b.read_input(config['embedding']['model-weights'][args.model])
     centers_file = b.read_input(args.centers_path.format(plate=plate))
@@ -40,7 +39,14 @@ for plate in args.plates:
     num_workers = config['embedding']['num-workers']
     image_folder = f'{input_folder}/{plate}/'
 
-    j.command(f'python3 /scripts/embeddings/run_model.py {args.model} {model_weights} /images/{quote(image_folder)} {quote(args.channel_names)} {quote(args.channel_substrings)} {quote(centers_file)} {num_workers} embedding.tsv crops.png')
+    j.command('apt update')
+    j.command('apt install -y git curl moreutils')
+    j.command('git clone https://github.com/atgu/microscopy_computational_tools.git')
+    j.command('cd microscopy_computational_tools')
+    j.command('curl -fsSL https://pixi.sh/install.sh | sh')
+    j.command('export PATH=/root/.pixi/bin:$PATH')
+    j.command('pixi install')
+    j.command(f'pixi run python embeddings/run_model.py {args.model} {model_weights} /images/{quote(image_folder)} {quote(args.channel_names)} {quote(args.channel_substrings)} {quote(centers_file)} {num_workers} embedding.tsv crops.png')
     j.command(f'mv embedding.tsv {j.ofile1}')
     j.command(f'mv crops.png {j.ofile2}')
     b.write_output(j.ofile1, f'{output_folder}/embedding_{args.model}_{plate}.tsv')

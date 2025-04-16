@@ -20,7 +20,7 @@ for plate in plates:
     j = b.new_job(name=f'cellpose {plate}')
     j.cloudfuse(bucket_name, '/images')
     j._machine_type = config['cellpose']['machine-type']
-    j.storage('30Gi') # should be large enough for pixi (16 GB) and for tsv output (not for images)
+    j.storage('30Gi') # should be large enough for pixi (12 GB) and for tsv output (not for images)
 
     if config['cellpose']['model'] is not None:
         cellpose_model = b.read_input(config['cellpose']['model'])
