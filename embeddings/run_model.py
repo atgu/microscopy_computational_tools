@@ -20,7 +20,7 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
     else:
         from cpcnn.simple_embed import cpcnn_model
         model = cpcnn_model(args.model_path)
-        num_output_features = 10
+        num_output_features = 672
         input_channels = ['DNA', 'RNA', 'ER', 'AGP', 'Mito']
 
     missing_channels = set(input_channels) - set(channel_names)
