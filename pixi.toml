@@ -8,13 +8,18 @@ version = "0.1.0"
 
 [dependencies]
 python = "3.12.*"
-
-[pypi-dependencies]
-cellpose = "*"
+pytorch = "2.4.*"
+tensorflow = "2.17.*"
 numpy = "*"
 pandas = "*"
 pillow = "*"
+
+
+[system-requirements]
+cuda = "12"
+
+[pypi-dependencies]
+cellpose = "*"
 pillow-jxl-plugin = "*"
 efficientnet = "*"
-torch = "*"
-tensorflow = "==2.17.*"
+nvidia-cuda-nvcc-cu12="==12.5.82"
