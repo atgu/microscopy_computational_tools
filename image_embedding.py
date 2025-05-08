@@ -1,100 +1,88 @@
+import os
 import sys
 import glob
-import os.path
-import numpy as np
-import pandas as pd
-from subimage_inspector import Subimage_inspector
-
-from ast import literal_eval
 import argparse
-from torch.utils.data import DataLoader
-from image_loader import Data_Set, Batch_Sampler
+import pandas as pd
 
-def cell_embeddings(model_name, model_path, images_folder, centers, output_file, inspection_file, channel_names, channel_substrings, num_workers):
+from torch.utils.data import DataLoader
+from utils.image_loader import Image_Data_Set
+
+
+def image_embeddings(model_name, model_path, images_folder, output_file, channel_names, channel_substrings, num_workers):
     output = []
-    if model_name == 'dino4cells':
-        from dino4cells.simple_embed import dino_model
-        model = dino_model(args.model_path)
-        num_output_features = 768
-        input_channels = ['DNA', 'RNA', 'ER', 'AGP', 'Mito']
-    else:
-        from cpcnn.simple_embed import cpcnn_model
-        model = cpcnn_model(args.model_path)
-        num_output_features = 672
-        input_channels = ['DNA', 'RNA', 'ER', 'AGP', 'Mito']
+    if model_name == 'cellpose':
+        from models.cellpose import cell_center_model
+        model = cell_center_model()
+        csv_header = 'file i j'.split()
+        input_channels = ['DNA']
+        num_output_features = 2
+        collate_fn = lambda x : x[0] # avoids conversion to Torch tensor
+        target_size = (512, 512)
+        log_scale = True
+    elif model_name == 'unidino':
+        from models.unidino import unidino_model
+        model = unidino_model(args.model_path)
+        csv_header = 'file embedding'.split()
+        input_channels = channel_names
+        num_output_features = 384 * len(input_channels)
+        collate_fn = None
+        target_size = None
+        log_scale = False
 
     missing_channels = set(input_channels) - set(channel_names)
     if len(missing_channels) > 0:
-        raise Exception('ERROR: Some channel names are missing. This model requires ' + ','.join(input_channels))
-    if 'DNA' not in input_channels:
-        raise Exception('ERROR: The DNA channel should be specified')
-    input_channels
+        raise Exception('ERROR: Some channel names are missing. The following channels are required: ' + ','.join(input_channels))
+    if len(channel_names) == 0:
+        raise Exception('ERROR: please pass a list of channel names.')
 
-    # generate image names
-    dna_images = [images_folder + imname for imname in centers.index]
+    # create file groups
     channel_filters = dict(zip(channel_names, channel_substrings))
-    other_images = [[dnaim.replace(channel_filters['DNA'], channel_filters[channel]) for dnaim in dna_images]
-                     for channel in input_channels if channel != 'DNA']
-    image_groups = list(zip(dna_images, *other_images))
+    files = set(glob.glob(f'{images_folder}*'))
 
-    # check that image paths point to actual files
-    actual_files = set(glob.glob(images_folder + '*'))
-    image_groups = [imgrp for imgrp in image_groups if all(filepath in actual_files for filepath in imgrp)]
+    file_groups = [[file.replace(channel_substrings[0], channel_filters[channel]) for channel in input_channels]
+                    for file in files if channel_substrings[0] in file]
 
-    if len(image_groups) != len(centers):
-        print(f"WARNING: Found complete image sets for {len(image_groups)} out of {len(centers)}")
+    # check that the input files are complete
+    num_groups = len(file_groups)
+    file_groups = [group for group in file_groups if all(f in files for f in group)]
+    if num_groups < len(file_groups):
+        print(f"WARNING: Found complete image sets for {num_groups} out of {len(file_groups)}", file=sys.stderr)
 
-    ds = Data_Set(image_groups, centers)
-    bs = Batch_Sampler(image_groups, centers)
-    dataloader = DataLoader(ds, batch_sampler=bs, num_workers=num_workers, pin_memory=True)
+    ds = Image_Data_Set(file_groups, target_size, log_scale)
+    dataloader = DataLoader(ds, batch_size=1, num_workers=num_workers, pin_memory=True, collate_fn=collate_fn)
 
     # set up hdf5, tsv, csv, and png output
     if output_file.endswith('.h5') or output_file.endswith('.hdf5'):
-        from hdf5writer import embedding_writer
+        from utils.hdf5writer import embedding_writer
         num_rows = len(ds)
         writer = embedding_writer(output_file, model_name, num_rows, num_output_features, 'f4')
     else:
-        from csvwriter import CSVWriter
+        from utils.csvwriter import CSVWriter
         writer = CSVWriter(output_file)
-        writer.write_header("file i j embedding".split())
-
-    if inspection_file is not None:
-        num_sample_crops = 25
-        num_channels = len(input_channels)
-        num_cells = len(ds)
-        resolution = 128
-        subimage_inspector = Subimage_inspector(num_cells, num_sample_crops, num_channels, resolution)
+        writer.write_header(csv_header)
 
     # generate embeddings
-    for dna_imnames, centers_i, centers_j, subimages in dataloader:
-        dna_imname = dna_imnames[0]
-        centers_i = centers_i.tolist()
-        centers_j = centers_j.tolist()
-        print(dna_imname, len(centers_i))
-        if inspection_file is not None:
-            subimage_inspector.add(dna_imname, centers_i, centers_j, subimages)
-        embeddings = model(subimages)
-        writer.writerows(dna_imname, centers_i, centers_j, embeddings)
-        
-        #if subimage_inspector.current_row > 0:
-        #    break
-    
-    if inspection_file is not None:
-        subimage_inspector.save(inspection_file)
+    for filenames, im_size, images in dataloader:
+        if collate_fn is None:
+            filenames = filenames[0]
+            im_size = im_size[0]
+            images = images[0, ::]
 
+        filename = filenames[0].removeprefix(images_folder) # name of the first channel
+        print(filename)
+        embedding = model(images, im_size)
+        print(type(embedding))
+        writer.writerow(filename, embedding)
     writer.close()
 
-
-parser = argparse.ArgumentParser(description='run_dino4cells', prefix_chars='@')
-parser.add_argument('model', type=str, choices=['dino4cells', 'cpcnn'])
+parser = argparse.ArgumentParser(description='per cell embedding', prefix_chars='@')
+parser.add_argument('model', type=str, choices=['cellpose', 'unidino'])
 parser.add_argument('model_path', type=str, help='model')
 parser.add_argument('plate_path', type=str, help='folder containing images')
 parser.add_argument('channel_names', type=str, help='comma seperated names of channels')
 parser.add_argument('channel_substrings', type=str, help='comma seperated substrings of filename to identify channels')
-parser.add_argument('centers_path', type=str, help='filename with cell centers')
 parser.add_argument('num_workers', type=int, help='number of processes for loading data')
 parser.add_argument('output_file', type=str, help='output filename', nargs='?', default='embedding.tsv')
-parser.add_argument('inspection_file', type=str, help='output filename with image crops for manual inspection', nargs='?')
 args = parser.parse_args()
 
 images_folder = args.plate_path
@@ -108,6 +96,4 @@ if args.channel_names.count(',') != args.channel_substrings.count(','):
 channel_names      = [s.strip() for s in args.channel_names.split(',')]
 channel_substrings = [s.strip() for s in args.channel_substrings.split(',')]
 
-centers = pd.read_table(args.centers_path, converters={'i':literal_eval, 'j':literal_eval}, index_col='file')
-
-cell_embeddings(args.model, args.model_path, images_folder, centers, args.output_file, args.inspection_file, channel_names, channel_substrings, args.num_workers)
+image_embeddings(args.model, args.model_path, images_folder, args.output_file, channel_names, channel_substrings, args.num_workers)

@@ -1,5 +1,5 @@
 import torch
-import archs.vision_transformer as vits
+import models.archs.vision_transformer as vits
 import numpy as np
 
 def dino_model(pretrained_weights_path):

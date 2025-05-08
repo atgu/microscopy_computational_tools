@@ -1,4 +1,5 @@
 import csv
+import numbers
 
 class CSVWriter:
     """
@@ -13,10 +14,26 @@ class CSVWriter:
     def write_header(self, header):
         self.writer.writerow(header)
 
-    def writerows(self, filename, centers_i, centers_j, embeddings):
-        for i, j, em in zip(centers_i, centers_j, embeddings):
-            em = [f'{val:.{self.precision}e}' for val in em]
-            self.writer.writerow([filename, i, j, em])
+    def format(self, val):
+        if hasattr(val, '__iter__'): # list, tuple, ndarray
+            return [self.format(v) for v in val]
+        if isinstance(val, numbers.Real) and not isinstance(val, numbers.Integral):
+            # floating type, including numpy types
+            return f'{val:.{self.precision}e}'
+        return val
+
+    def writerows(self, filename, columns):
+        for row in zip(*columns):
+            row = list(row)
+            for idx in range(len(row)):
+                row[idx] = self.format(row[idx])
+            self.writer.writerow([filename] + row)
+
+    def writerow(self, filename, columns):
+        columns = list(columns)
+        for idx in range(len(columns)):
+            columns[idx] = self.format(columns[idx])
+        self.writer.writerow([filename] + columns)
 
     def close(self):
         self.writer = None

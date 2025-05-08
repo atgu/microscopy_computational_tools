@@ -8,15 +8,19 @@ from torch.utils.data.sampler import Sampler
 
 SCALE = 2**16 - 1
 
-def rescale(arr, axes=[-1, -2]):
+def rescale(arr):
     arr = arr.copy()
-    arr = arr.astype(np.float32)
+    arr = arr.astype(np.double)
     arr -= np.min(arr)
-    arr = (arr * SCALE / (np.max(arr) + 1e-8))
+    arr = (arr * SCALE / np.max(arr)).astype(np.uint16)
+    return arr
+
+def log_scale(arr):
+    return rescale( np.log1p(arr) )
     return arr
 
 
-class Data_Set(Dataset):
+class Cell_Data_Set(Dataset):
     def __init__(self, image_groups, centers, subwindow=128):
         self.image_groups = image_groups
         self.centers = centers
@@ -72,7 +76,7 @@ class Data_Set(Dataset):
         return self.centers.index[image_idx], center_i, center_j, cell
 
 
-class Batch_Sampler(Sampler):
+class Cell_Batch_Sampler(Sampler):
     def __init__(self, image_groups, centers):
         self.image_groups = image_groups
         self.cells_per_image = centers.i.str.len().to_dict()
@@ -86,3 +90,42 @@ class Batch_Sampler(Sampler):
             batch_size = self.cells_per_image[key]
             yield [offset+i for i in range(batch_size)]
             offset += batch_size
+
+class Image_Data_Set(Dataset):
+    def __init__(self, file_groups, target_size = (512, 512), log_scale=True, dynamic_range_threshold = 1000):
+        self.file_groups = file_groups
+        self.target_size = target_size
+        self.log_scale = log_scale
+        self.dynamic_range_threshold = dynamic_range_threshold
+        self.blank_image = np.zeros(self.target_size, dtype=np.uint16)
+    def __len__(self):
+        num_files = len(self.file_groups)
+        return num_files
+    def __getitem__(self, idx):
+        filenames = self.file_groups[idx]
+        im_size = None
+        try:
+            images = [Image.open(filename) for filename in filenames]
+
+            im_size = images[0].size
+
+            if self.target_size is not None:
+                images = [im.resize(self.target_size, Image.Resampling.NEAREST) for im in images]
+            images = [np.array(im) for im in images]
+
+            if self.dynamic_range_threshold is not None:
+                images = [self.blank_image if np.max(im) - np.min(im) < self.dynamic_range_threshold else im for im in images]
+                
+            if self.log_scale:
+                images = [log_scale(im) for im in images]
+            else:
+                images = [im.astype(np.float32) / SCALE for im in images]
+            images = np.array(images)
+
+        except KeyboardInterrupt:
+            sys.exit(0)
+        except Exception as e:
+            print(f'WARNING: Loading file failed for {filenames}', e)
+            images = [self.blank_image for _ in filenames]
+
+        return filenames, im_size, images

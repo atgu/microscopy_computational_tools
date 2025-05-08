@@ -1,7 +1,6 @@
 import efficientnet.tfkeras as efn
 import tensorflow as tf
 import numpy as np
-import glob
 
 def cpcnn_model(pretrained_weights_path):
     # code extracted from https://github.com/cytomining/DeepProfiler/blob/master/plugins/models/efficientnet.py
