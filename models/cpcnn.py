@@ -1,3 +1,7 @@
+# suppress "Skipping the delay kernel" messages
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import efficientnet.tfkeras as efn
 import tensorflow as tf
 import numpy as np
