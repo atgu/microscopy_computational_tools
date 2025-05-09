@@ -23,7 +23,7 @@ def image_embeddings(model_name, model_path, images_folder, output_file, channel
         from models.unidino import unidino_model
         model = unidino_model(args.model_path)
         csv_header = 'file embedding'.split()
-        input_channels = channel_names
+        input_channels = sorted(channel_names)
         num_output_features = 384 * len(input_channels)
         collate_fn = None
         target_size = None
@@ -68,7 +68,8 @@ def image_embeddings(model_name, model_path, images_folder, output_file, channel
     else:
         from utils.csvwriter import CSVWriter
         writer = CSVWriter(output_file)
-        writer.write_header(csv_header)
+        if num_processes == 1 or process_idx == 0:
+            writer.write_header(csv_header)
 
     # generate embeddings
     for filenames, im_size, images in dataloader:
