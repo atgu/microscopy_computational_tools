@@ -54,5 +54,6 @@ for plate in plates:
     b.write_output(j.ofile1, f'{output_folder}/embedding_{args.model}_{plate}.h5')
     b.write_output(j.ofile2, f'{output_folder}/embedding_{args.model}_{plate}.png')
     if args.averages:
-        b.write_output(j.ofile1, f'{output_folder}/embedding_{args.model}_{plate}_avg.h5')
+        j.command(f'mv embedding_avg.tsv {j.ofile3}')
+        b.write_output(j.ofile3, f'{output_folder}/embedding_{args.model}_{plate}_avg.tsv')
 b.run()

@@ -67,7 +67,7 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
     
     if averages: # Create a new writer for averages
         from utils.csvwriter import CSVWriter
-        writer_avg = CSVWriter(f'{output_file}_avg.tsv')
+        writer_avg = CSVWriter(f'{output_file.rpartition('.')[0]}_avg.tsv')
         writer_avg.write_header("file embedding".split())
 
     if inspection_file is not None:
@@ -97,6 +97,8 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
         subimage_inspector.save(inspection_file)
 
     writer.close()
+    if averages:
+        writer_avg.close()
 
 
 parser = argparse.ArgumentParser(description='per image embedding', prefix_chars='@')
