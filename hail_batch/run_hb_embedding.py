@@ -43,7 +43,7 @@ for plate in plates:
 
     j.command('apt update')
     j.command('apt install -y git curl moreutils')
-    j.command('git clone -b dev --single-branch https://github.com/atgu/microscopy_computational_tools.git')
+    j.command('git clone -b dev --single-branch https://github.com/AMCalejandro/microscopy_computational_tools.git')
     j.command('cd microscopy_computational_tools')
     j.command('curl -fsSL https://pixi.sh/install.sh | sh')
     j.command('export PATH=/root/.pixi/bin:$PATH')
