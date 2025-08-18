@@ -9,17 +9,16 @@ import argparse
 from torch.utils.data import DataLoader
 from utils.image_loader import Cell_Data_Set, Cell_Batch_Sampler, Scaling
 
-def cell_embeddings(model_name, model_path, images_folder, centers, output_file, inspection_file, channel_names, channel_substrings, num_workers):
-    output = []
+def cell_embeddings(model_name, model_path, images_folder, centers, output_file, inspection_file, channel_names, channel_substrings, num_workers, averages):
     if model_name == 'dino4cells':
         from models.dino4cells import dino_model
-        model = dino_model(args.model_path)
+        model = dino_model(model_path)
         num_output_features = 768
         input_channels = ['DNA', 'RNA', 'ER', 'AGP', 'Mito']
         scaling = Scaling.CHANNEL_Z_SCORE
     if model_name == 'dino4cells_small':
         from models.dino4cells import dino_model
-        model = dino_model(args.model_path)
+        model = dino_model(model_path)
         num_output_features = 384
         input_channels = ['DNA', 'RNA', 'ER', 'AGP', 'Mito']
         scaling = Scaling.CHANNEL_Z_SCORE
@@ -65,6 +64,11 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
         from utils.csvwriter import CSVWriter
         writer = CSVWriter(output_file)
         writer.write_header("file i j embedding".split())
+    
+    if averages: # Create a new writer for averages
+        from utils.csvwriter import CSVWriter
+        writer_avg = CSVWriter(f'{output_file}_avg.tsv')
+        writer_avg.write_header("file embedding".split())
 
     if inspection_file is not None:
         num_sample_crops = 25
@@ -83,6 +87,8 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
             subimage_inspector.add(dna_imname, centers_i, centers_j, subimages)
         embeddings = model(subimages)
         writer.writerows(dna_imname, [centers_i, centers_j, embeddings])
+        if averages:
+            writer_avg.writerows(dna_imname, [embeddings])
         
         #if subimage_inspector.current_row > 0:
         #    break
@@ -103,6 +109,8 @@ parser.add_argument('centers_path', type=str, help='filename with cell centers')
 parser.add_argument('num_workers', type=int, help='number of processes for loading data', nargs='?', default=1)
 parser.add_argument('output_file', type=str, help='output filename', nargs='?', default='embedding.tsv')
 parser.add_argument('inspection_file', type=str, help='output filename with image crops for manual inspection', nargs='?')
+parser.add_argument('averages', type=lambda x: x.lower() in ['true'], nargs='?', default=False, help='whether to compute averages (True/False, default=False)')
+
 args = parser.parse_args()
 
 images_folder = args.plate_path
@@ -120,4 +128,4 @@ centers = pd.read_table(args.centers_path, index_col='file', sep=None, engine='p
 centers['i'] = centers['i'].apply(literal_eval)
 centers['j'] = centers['j'].apply(literal_eval)
 
-cell_embeddings(args.model, args.model_path, images_folder, centers, args.output_file, args.inspection_file, channel_names, channel_substrings, args.num_workers)
+cell_embeddings(args.model, args.model_path, images_folder, centers, args.output_file, args.inspection_file, channel_names, channel_substrings, args.num_workers, args.averages)
