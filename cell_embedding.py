@@ -89,7 +89,7 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
         embeddings = model(subimages)
         writer.writerows(dna_imname, [centers_i, centers_j, embeddings])
         if averages:
-            writer_avg.writerow(dna_imname, np.insert(embeddings.shape[0], 0, embeddings.mean(axis=0)))
+            writer_avg.writerow(dna_imname, np.insert(embeddings.mean(axis=0), 0, embeddings.shape[0]))
         
         #if subimage_inspector.current_row > 0:
         #    break
