@@ -68,7 +68,7 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
     if averages: # Create a new writer for averages
         from utils.csvwriter import CSVWriter
         writer_avg = CSVWriter(f'{output_file.rpartition('.')[0]}_avg.tsv')
-        csv_header = ['file'] + [f'feature_{idx}' for idx in range(num_output_features)]
+        csv_header = ['file', 'cell_count'] + [f'feature_{idx}' for idx in range(num_output_features)]
         writer_avg.write_header(csv_header)
 
     if inspection_file is not None:
@@ -89,7 +89,7 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
         embeddings = model(subimages)
         writer.writerows(dna_imname, [centers_i, centers_j, embeddings])
         if averages:
-            writer_avg.writerow(dna_imname, embeddings.mean(axis=0))
+            writer_avg.writerow(dna_imname, np.insert(embeddings.mean(axis=0), 0, embeddings.shape[0]))
         
         #if subimage_inspector.current_row > 0:
         #    break
