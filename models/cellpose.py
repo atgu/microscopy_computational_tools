@@ -25,6 +25,9 @@ def cell_center_model(diameter=25, flow_threshold=0.4, channels=[0,0]):
             for i, si in enumerate(slices)
             if si is not None
         ])
+
+        if len(slices) == 0:
+            return [], []
         
         centers, _ = get_centers(masks[0], slices)
         centers_x = [round(scale_x * c[0]) for c in centers]
