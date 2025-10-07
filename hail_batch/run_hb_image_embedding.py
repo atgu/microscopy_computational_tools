@@ -28,7 +28,7 @@ for plate in plates:
     j = b.new_job(name=f'embedding {model} {plate}')
     j.cloudfuse(bucket_name, '/images')
     j._machine_type = config[model]['machine-type']
-    j.storage('20Gi') # should be large enough for pixi (12 GB) and for tsv output (not for images)
+    j.storage('30Gi') # should be large enough for pixi (12 GB) and for tsv output (not for images)
 
     if model == 'cellpose' and config[model]['model-weights'] is not None:
         cellpose_model = b.read_input(config[model]['model-weights'])
