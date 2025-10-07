@@ -106,6 +106,8 @@ class Cell_Batch_Sampler(Sampler):
                 # an image without any detected cells
                 continue
             batch_size = self.cells_per_image[key]
+            if batch_size == 0:
+                continue
             yield [offset+i for i in range(batch_size)]
             offset += batch_size
 
