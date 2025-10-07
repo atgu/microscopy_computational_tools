@@ -39,7 +39,7 @@ def image_embeddings(model_name, model_path, images_folder, output_file, channel
 
     # create file groups
     channel_filters = dict(zip(channel_names, channel_substrings))
-    files = set(glob.glob(f'{images_folder}*'))
+    files = set(glob.glob(f'{images_folder}/**/*', recursive=True))
 
     file_groups = [[file.replace(channel_substrings[0], channel_filters[channel]) for channel in input_channels]
                     for file in files if channel_substrings[0] in file]
