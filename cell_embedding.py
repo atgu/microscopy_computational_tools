@@ -43,15 +43,15 @@ def cell_embeddings(model_name, model_path, images_folder, centers, output_file,
     image_groups = list(zip(dna_images, *other_images))
 
     # check that image paths point to actual files
-    actual_files = set(glob.glob(images_folder + '*'))
+    actual_files = set(glob.glob(images_folder + '**/*', recursive=True))
     image_groups = [imgrp for imgrp in image_groups if all(filepath in actual_files for filepath in imgrp)]
 
     if len(image_groups) != len(centers):
         num_incomplete = len(centers) - len(image_groups)
         print(f"WARNING: {num_incomplete} out of {len(centers)} image sets have missing images and will not be processed.")
 
-    ds = Cell_Data_Set(image_groups, centers, scaling)
-    bs = Cell_Batch_Sampler(image_groups, centers)
+    ds = Cell_Data_Set(images_folder, image_groups, centers, scaling)
+    bs = Cell_Batch_Sampler(images_folder, image_groups, centers)
     dataloader = DataLoader(ds, batch_sampler=bs, num_workers=num_workers, pin_memory=True)
 
     # set up hdf5, tsv, csv, and png output

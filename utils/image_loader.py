@@ -26,7 +26,7 @@ def log_scale(arr):
 
 
 class Cell_Data_Set(Dataset):
-    def __init__(self, image_groups, centers, scaling, subwindow=128):
+    def __init__(self, images_folder, image_groups, centers, scaling, subwindow=128):
         self.image_groups = image_groups
         self.centers = centers
         self.scaling = scaling
@@ -37,7 +37,7 @@ class Cell_Data_Set(Dataset):
         self.cell_idx_to_image_idx = []
         self.cell_idx_to_offset = []
         for image_idx, imgrp in enumerate(image_groups):
-            key = os.path.basename(imgrp[0])
+            key = imgrp[0].removeprefix(images_folder)
             if key not in self.cells_per_image:
                 # an image without any detected cells
                 continue
@@ -94,13 +94,14 @@ class Cell_Data_Set(Dataset):
 
 
 class Cell_Batch_Sampler(Sampler):
-    def __init__(self, image_groups, centers):
+    def __init__(self, images_folder, image_groups, centers):
+        self.images_folder = images_folder
         self.image_groups = image_groups
         self.cells_per_image = centers.i.str.len().to_dict()
     def __iter__(self):
         offset = 0
         for imgrp in self.image_groups:
-            key = os.path.basename(imgrp[0])
+            key = imgrp[0].removeprefix(self.images_folder)
             if key not in self.cells_per_image:
                 # an image without any detected cells
                 continue
