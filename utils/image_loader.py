@@ -27,6 +27,7 @@ def log_scale(arr):
 
 class Cell_Data_Set(Dataset):
     def __init__(self, images_folder, image_groups, centers, scaling, subwindow=128):
+        self.images_folder = images_folder
         self.image_groups = image_groups
         self.centers = centers
         self.scaling = scaling
@@ -64,6 +65,7 @@ class Cell_Data_Set(Dataset):
         return output
     def __getitem__(self, idx):
         image_idx = self.cell_idx_to_image_idx[idx]
+        center_idx = self.image_groups[image_idx][0].removeprefix(self.images_folder)
         if self.file_loaded != image_idx:
             self.file_loaded = image_idx
             self.images = []
@@ -80,17 +82,17 @@ class Cell_Data_Set(Dataset):
                     self.images.append( im.astype(np.float32) )
                 except Exception as e:
                     print(f'WARNING: Loading file failed for {filename}', e)
-                    i_max = max( self.centers['i'].iloc[image_idx] )
-                    j_max = max( self.centers['j'].iloc[image_idx] )
+                    i_max = max( self.centers.loc[center_idx, 'i'] )
+                    j_max = max( self.centers.loc[center_idx, 'j'] )
                     self.images.append( np.zeros((i_max, j_max), dtype=np.float32) )
             # pad images to simplify subimage extraction
             padwidth = self.subwindow // 2
             # this makes i, j the upper left corner of each subwindow, and prevents out-of-bounds
             self.images = [np.pad(im, (padwidth, self.subwindow - padwidth), constant_values=np.nan) for im in self.images]
-        center_i = self.centers['i'].iloc[image_idx][ self.cell_idx_to_offset[idx] ]
-        center_j = self.centers['j'].iloc[image_idx][ self.cell_idx_to_offset[idx] ]
+        center_i = self.centers.loc[center_idx, 'i'][ self.cell_idx_to_offset[idx] ]
+        center_j = self.centers.loc[center_idx, 'j'][ self.cell_idx_to_offset[idx] ]
         cell = self.extract_subimage(self.images, center_i, center_j, self.subwindow)
-        return self.centers.index[image_idx], center_i, center_j, cell
+        return center_idx, center_i, center_j, cell
 
 
 class Cell_Batch_Sampler(Sampler):
