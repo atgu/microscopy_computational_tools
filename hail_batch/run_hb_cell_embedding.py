@@ -88,6 +88,7 @@ for plate in plates:
     b.write_output(j.ofile1, f'{output_folder}/embedding_{model}_{plate}.h5')
     b.write_output(j.ofile2, f'{output_folder}/embedding_{model}_{plate}.png')
     if averages:
-        j.command(f'mv embedding_avg.tsv {j.ofile3}')
-        b.write_output(j.ofile3, f'{output_folder}/embedding_{model}_{plate}_avg.tsv')
+        j.command(f'gzip embedding_avg.tsv')
+        j.command(f'mv embedding_avg.tsv.gz {j.ofile3}')
+        b.write_output(j.ofile3, f'{output_folder}/embedding_{model}_{plate}_avg.tsv.gz')
 b.run()
