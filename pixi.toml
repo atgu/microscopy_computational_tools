@@ -10,9 +10,10 @@ pytorch = "2.7.*"
 numpy = "2.1.*"
 pandas = "*"
 pillow = "*"
+cuda-version = "==12.8"
 
 [system-requirements]
-cuda = "12.8"
+cuda = "12"
 
 [pypi-dependencies]
 cellpose = "==3.*"
