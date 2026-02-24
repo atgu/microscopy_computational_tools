@@ -57,7 +57,7 @@ class HDF5Writer:
         meta_group = self.h5file.create_group("meta")
         for col in metadata.columns:
             col_data = metadata[col].values
-            if metadata[col].dtype == np.dtype('O'):
+            if pd.api.types.is_string_dtype(metadata[col]):
                 col_data = col_data.astype('S')
             meta_group.create_dataset(col, data=col_data, compression='gzip')
 
