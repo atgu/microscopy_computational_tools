@@ -80,6 +80,9 @@ def image_embeddings(model_name, model_path, images_folder, output_file, channel
             filenames = filenames[0]
             im_size = im_size[0]
             images = images[0, ::]
+        if len(images.shape) == 1:
+            # dynamic range threshold not met and target_size is None
+            continue
 
         filename = filenames[0].removeprefix(images_folder) # name of the first channel
         print(filename, end='')

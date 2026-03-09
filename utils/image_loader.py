@@ -136,7 +136,8 @@ class Image_Data_Set(Dataset):
             images = [np.array(im) for im in images]
 
             if self.dynamic_range_threshold is not None:
-                images = [self.blank_image if np.max(im) - np.min(im) < self.dynamic_range_threshold else im for im in images]
+                if all(np.max(im) - np.min(im) < self.dynamic_range_threshold for im in images):
+                    images = [self.blank_image for im in images]
                 
             if self.log_scale:
                 images = [log_scale(im) for im in images]
