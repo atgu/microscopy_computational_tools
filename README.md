@@ -20,7 +20,7 @@ The output is consolidated into a single csv, tsv or HDF5 file per plate.
 ```
 usage: image_embedding.py [@h]
                           {cellpose,unidino} model_path plate_path channel_names channel_substrings
-                          [num_workers] [num_processes] [process_idx] [output_file]
+                          num_workers [num_processes] [process_idx] [output_file]
 
 per cell embedding
 
@@ -49,9 +49,9 @@ Even with the Torch dataloader, the CPU might be saturated before the GPU. Runni
 
 Example commands:
 ```
-pixi run python image_embedding.py cellpose - BR00123 DNA ch5
+pixi run python image_embedding.py cellpose - BR00123 DNA ch5 1
 parallel -j 3 pixi run python image_embedding.py cellpose - BR00123 DNA ch5 0 3 -- 0 1 2
-pixi run python image_embedding.py unidino uniDINO.pth BR00123 DNA,RNA,AGP,ER,Mito -ch5,-ch3,-ch1,-ch4,-ch2
+pixi run python image_embedding.py unidino uniDINO.pth BR00123 DNA,RNA,AGP,ER,Mito -ch5,-ch3,-ch1,-ch4,-ch2 1
 ```
 
 The output is a tsv file with one line per file containing the filename and embedding. With cellpose, the embedding is split into two columns:
