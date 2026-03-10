@@ -12,7 +12,7 @@ def image_embeddings(model_name, model_path, images_folder, output_file, channel
     output = []
     if model_name == 'cellpose':
         from models.cellpose import cell_center_model
-        model = cell_center_model()
+        model = cell_center_model(model_path)
         input_channels = ['DNA']
         num_output_features = 2
         csv_header = 'file i j'.split()
@@ -97,7 +97,7 @@ def image_embeddings(model_name, model_path, images_folder, output_file, channel
 
 parser = argparse.ArgumentParser(description='per cell embedding', prefix_chars='@')
 parser.add_argument('model', type=str, choices=['cellpose', 'unidino'])
-parser.add_argument('model_path', type=str, help='model')
+parser.add_argument('model_path', type=str, help='model path (unidino) or model name (cellpose)')
 parser.add_argument('plate_path', type=str, help='folder containing images')
 parser.add_argument('channel_names', type=str, help='comma seperated names of channels')
 parser.add_argument('channel_substrings', type=str, help='comma seperated substrings of filename to identify channels')

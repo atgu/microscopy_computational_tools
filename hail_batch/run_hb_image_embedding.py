@@ -2,6 +2,7 @@ import hailtop.batch as hb
 from shlex import quote
 import yaml
 from urllib.parse import urlparse
+import os
 
 # runtime parameters
 model              = 'cellpose' # cellpose or unidino
@@ -31,12 +32,13 @@ for plate in plates:
     j.storage('30Gi') # should be large enough for pixi (12 GB) and for tsv output (not for images)
 
     if model == 'cellpose' and config[model]['model-weights'] is not None:
+        model_target_filename = os.path.basename(config[model]['model-weights']).removeprefix('cellpose_')
+        model_path = model_target_filename.split('torch')[0] # nuclei, cyto3, etc
         cellpose_model = b.read_input(config[model]['model-weights'])
         cellpose_model_size = b.read_input(config[model]['model-size'])
         j.command('mkdir -p ~/.cellpose/models/')
-        j.command(f'cp {cellpose_model} ~/.cellpose/models/nucleitorch_0')
-        j.command(f'cp {cellpose_model_size} ~/.cellpose/models/size_nucleitorch_0.npy')
-        model_path = 'not_used'
+        j.command(f'cp {cellpose_model} ~/.cellpose/models/{model_target_filename}')
+        j.command(f'cp {cellpose_model_size} ~/.cellpose/models/size_{model_target_filename}.npy')
     else:
         model_path = b.read_input(config[model]['model-weights'])
 

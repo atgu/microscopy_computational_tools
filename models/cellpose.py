@@ -3,8 +3,8 @@ from cellpose import models
 from cellpose.dynamics import get_centers
 from scipy.ndimage import find_objects
 
-def cell_center_model(diameter=25, flow_threshold=0.4, channels=[0,0]):
-    model = models.Cellpose(gpu=True, model_type='nuclei')
+def cell_center_model(model_type='nuclei', diameter=25, flow_threshold=0.4, channels=[0,0]):
+    model = models.Cellpose(gpu=True, model_type)
 
     # based on https://github.com/MouseLand/cellpose/blob/main/cellpose/dynamics.py
     def eval_model(images, im_size):
