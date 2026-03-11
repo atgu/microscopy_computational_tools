@@ -53,7 +53,7 @@ for plate in plates:
     j.command('cd microscopy_computational_tools')
     j.command('curl -fsSL https://pixi.sh/install.sh | sh')
     j.command('export PATH=/root/.pixi/bin:$PATH')
-    j.command('pixi install')
+    j.command('for attempt in {1..10}; do pixi install && break; done')
     j.command(f'parallel -j {num_processes} pixi run python image_embedding.py {model} {model_path} /images/{quote(image_folder)} {quote(channel_names)} {quote(channel_substrings)} {num_workers} {process_string}')
     j.command(f'gzip -c embedding*.tsv >> {j.ofile}')
     b.write_output(j.ofile, f'{output_folder}/cellpose_{plate}.tsv.gz')

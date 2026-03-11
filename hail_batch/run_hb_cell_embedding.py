@@ -81,7 +81,7 @@ for plate in plates:
     j.command('cd microscopy_computational_tools')
     j.command('curl -fsSL https://pixi.sh/install.sh | sh')
     j.command('export PATH=/root/.pixi/bin:$PATH')
-    j.command('pixi install')
+    j.command('for attempt in {1..10}; do pixi install && break; done')
     j.command(f'pixi run python cell_embedding.py {model} {model_weights} /images/{quote(image_folder)} {quote(channel_names)} {quote(channel_substrings[plate])} {quote(centers_file)} {num_workers} embedding.h5 crops.png {averages}')
     j.command(f'mv embedding.h5 {j.ofile1}')
     j.command(f'mv crops.png {j.ofile2}')
